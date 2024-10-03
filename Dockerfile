@@ -3,13 +3,12 @@ FROM php:8.2-fpm
 # 作業ディレクトリを設定
 WORKDIR /var/www/html
 
-# パッケージのインストール
+# 必要なパッケージのインストール
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     unzip \
-    nginx \
-    supervisor \
-    && docker-php-ext-install pdo_mysql zip
+    libpq-dev \
+    && docker-php-ext-install pdo_pgsql zip
 
 # Composerのインストール
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -37,5 +36,10 @@ RUN chown -R www-data:www-data storage bootstrap/cache
 # ポートの公開(8080)
 EXPOSE 8080
 
-# 起動コマンド
-CMD ["/usr/bin/supervisord"]
+# エントリーポイントスクリプトをコピー
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# エントリーポイントを設定
+ENTRYPOINT ["/entrypoint.sh"]
+
