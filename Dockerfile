@@ -1,46 +1,20 @@
-FROM php:8.2-fpm
+FROM richarvey/nginx-php-fpm:3.1.6
 
-# 作業ディレクトリを設定
-WORKDIR /var/www/html
-
-# 必要なパッケージとPHP拡張モジュールのインストール
-RUN apt-get update && apt-get install -y \
-    libzip-dev \
-    unzip \
-    libpq-dev \
-    nginx \
-    supervisor \
-    && docker-php-ext-install pdo_pgsql zip
-
-# Composerのインストール
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# アプリケーションコードをコピー
 COPY . .
 
-# 依存関係のインストール
-RUN composer install --no-dev --optimize-autoloader
+# Image config
+ENV SKIP_COMPOSER 1
+ENV WEBROOT /var/www/html/public
+ENV PHP_ERRORS_STDERR 1
+ENV RUN_SCRIPTS 1
+ENV REAL_IP_HEADER 1
 
-# アプリケーションのキャッシュを生成
-RUN php artisan config:cache && \
-    php artisan route:cache && \
-    php artisan view:cache
+# Laravel config
+ENV APP_ENV production
+ENV APP_DEBUG false
+ENV LOG_CHANNEL stderr
 
-# Nginxの設定ファイルをコピー
-COPY .docker/nginx/nginx.conf /etc/nginx/sites-available/default
+# Allow composer to run as root
+ENV COMPOSER_ALLOW_SUPERUSER 1
 
-# Supervisorの設定ファイルをコピー
-COPY .docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# パーミッションの設定
-RUN chown -R www-data:www-data storage bootstrap/cache
-
-# ポートの公開(8080)
-EXPOSE 8080
-
-# エントリーポイントスクリプトをコピー
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# エントリーポイントを設定
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/start.sh"]
