@@ -3,11 +3,13 @@ FROM php:8.2-fpm
 # 作業ディレクトリを設定
 WORKDIR /var/www/html
 
-# 必要なパッケージのインストール
+# 必要なパッケージとPHP拡張モジュールのインストール
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     unzip \
     libpq-dev \
+    nginx \
+    supervisor \
     && docker-php-ext-install pdo_pgsql zip
 
 # Composerのインストール
@@ -42,4 +44,3 @@ RUN chmod +x /entrypoint.sh
 
 # エントリーポイントを設定
 ENTRYPOINT ["/entrypoint.sh"]
-
