@@ -1,0 +1,26 @@
+name: PHP CS Fixer
+
+on:
+  push:
+jobs:
+  php-cs-fixer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3.6.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          tools: composer
+
+      - name: Composer install
+        run: composer install
+        working-directory: ./
+
+      - name: Run PHP CS Fixer
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+        working-directory: ./
