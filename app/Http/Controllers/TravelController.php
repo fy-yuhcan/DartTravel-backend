@@ -25,7 +25,7 @@ class TravelController extends Controller
         }
 
         // 候補地から緯度、経度を返すようにする
-        
+        $destinations = $this->getLatLngFromDestinations($destinations);
     }
 
     #候補地が2追加だったときに、openapiを使って新しい候補地を取得する
@@ -52,6 +52,30 @@ class TravelController extends Controller
         $generateDestinations = response()->json([$result->choices[0]->message->content]);
 
         return $generateDestinations;
+    }
+
+    #候補地から緯度経度を返す処理
+    private function getLatLngFromDestinations($destinations)
+    {
+        $destinationsWithLatLng = [];
+        foreach ($destinations as $destination) {
+            $response = Http::get('https://maps.googleapis.com/maps/api/geocode/json', [
+                'address' => $destination,
+                'key' => env('GOOGLE_MAP_API_KEY'),
+            ]);
+
+            $result = $response->json();
+            if ($result['status'] === 'OK') {
+                $location = $result['results'][0]['geometry']['location'];
+                $destinationsWithLatLng[] = [
+                    'name' => $destination,
+                    'lat' => $location['lat'],
+                    'lng' => $location['lng'],
+                ];
+            }
+        }
+
+        return $destinationsWithLatLng;
     }
 }
 
