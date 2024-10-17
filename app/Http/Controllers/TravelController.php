@@ -30,7 +30,7 @@ class TravelController extends Controller
 
         // 候補地から緯度、経度を返すようにする
         $destinations = $this->getLatLngFromDestinations($destinations);
-        return response()->json([$destinations]);
+        return response()->json($destinations);
     }
 
     #候補地が2追加だったときに、openapiを使って新しい候補地を取得する
