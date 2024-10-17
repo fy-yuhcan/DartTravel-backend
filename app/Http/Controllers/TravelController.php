@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -9,16 +10,19 @@ use OpenAI\Laravel\Facades\OpenAI;
 class TravelController extends Controller
 {
     #入力値からgooglemapのルートを作成する
-    public function generateTravelPlan(Request $request)
+    public function generateTravelPlan(Request $request):JsonResponse
     {
         // TODOバリデーション
 
+        /** @var string $region */
         $region = $request->input('region');
+        /** @var array<string> $destinations */
         $destinations = $request->input('destinations', []);
 
         // 候補地がない場合、自動で地域から一日で回れる地点を選定
         if (empty($destinations)) {
             $destinations = $this->generateDestinationsFromRegion($region);
+
             if (is_array($destinations) && empty($destinations)) {
                 return response()->json(['error' => '候補地の生成に失敗しました。'], 500);
             }
@@ -30,7 +34,11 @@ class TravelController extends Controller
     }
 
     #候補地が2追加だったときに、openapiを使って新しい候補地を取得する
-    private function generateDestinationsFromRegion($region)
+    /**
+     * @param string $region
+     * @return string[] $generateDestinations
+     */
+    private function generateDestinationsFromRegion($region): array
     {
         // message内容
         $messages = [
@@ -52,6 +60,9 @@ class TravelController extends Controller
         // OpenAIの返答から候補地を抽出
         $generateDestinations = $result->choices[0]->message->content;
 
+        if($generateDestinations === null){
+            return [];
+        }
         //レスポンスを整形してdestinationsの配列に直す
         $generateDestinations = explode(',', $generateDestinations);
 
@@ -59,7 +70,11 @@ class TravelController extends Controller
     }
 
     #候補地から緯度経度を返す処理
-    private function getLatLngFromDestinations($destinations)
+    /**
+     * @param array<string> $destinations
+     * @return array<array{name: string, lat: float, lng: float}>
+     */
+    private function getLatLngFromDestinations($destinations): array
     {
         $destinationsWithLatLng = [];
 
@@ -71,17 +86,23 @@ class TravelController extends Controller
             ]);
 
             //results->geometry->locationでlat,lngが取得できる
+            /** @var array<string, mixed> $result */
             $result = $response->json();
-            if ($result['status'] === 'OK') {
-                $location = $result['results'][0]['geometry']['location'];
-                $destinationsWithLatLng[] = [
-                    'name' => $destination,
-                    'lat' => $location['lat'],
-                    'lng' => $location['lng'],
-                ];
+
+            if (isset($result['status']) && $result['status'] === 'OK') {
+                if (isset($result['results']) && is_array($result['results']) &&
+                    isset($result['results'][0]['geometry']['location']) &&
+                    is_array($result['results'][0]['geometry']['location'])) {
+                    /** @var array<string, float> $location */
+                    $location = $result['results'][0]['geometry']['location'];
+                    $destinationsWithLatLng[] = [
+                        'name' => $destination,
+                        'lat' => $location['lat'],
+                        'lng' => $location['lng'],
+                    ];
+                }
             }
         }
-
         return $destinationsWithLatLng;
     }
 }
