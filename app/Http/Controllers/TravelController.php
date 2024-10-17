@@ -39,7 +39,7 @@ class TravelController extends Controller
                 'content' => "指定された地域: {$region} で一日で回れる人気の観光地を3つ提案してください。
                 レスポンスは、以下のような形で返却してください。
                 例（{$region}が東京だった場合）:
-                [\"東京タワー\",\"浅草寺\",\"東京ディズニーランド\"]"
+                \"東京タワー\",\"浅草寺\",\"東京ディズニーランド\""
             ]
         ];
 
@@ -50,7 +50,10 @@ class TravelController extends Controller
         ]);
 
         // OpenAIの返答から候補地を抽出
-        $generateDestinations = response()->json([$result->choices[0]->message->content]);
+        $generateDestinations = $result->choices[0]->message->content;
+
+        //レスポンスを整形してdestinationsの配列に直す
+        $generateDestinations = explode(',', $generateDestinations);
 
         return $generateDestinations;
     }
