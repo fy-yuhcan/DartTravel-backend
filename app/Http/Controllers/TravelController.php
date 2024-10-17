@@ -60,7 +60,7 @@ class TravelController extends Controller
         // OpenAIの返答から候補地を抽出
         $generateDestinations = $result->choices[0]->message->content;
 
-        if($generateDestinations === null){
+        if ($generateDestinations === null) {
             return [];
         }
         //レスポンスを整形してdestinationsの配列に直す
